@@ -7,7 +7,7 @@ However, it should be relatively adaptable for use in other Linux distributions,
 
 Ensure:
 <ul>
-    <li>the installation instructions on the <a href="https://www.postgresql.org/download/linux/ubuntu/">PostgreSQL<a> website have been followed</li>
+    <li>the installation instructions on the <a href="https://www.postgresql.org/download/linux/ubuntu/">PostgreSQL<a> website have been followed, and the server/client are ready for your machine</li>
     <li>the virtual environment requirements in requirements.txt have been installed</li>
     <li>your environment variable EML_MINER is set to your miner wallet (excluding the 0x prefix)</li>
     <li>your environment variable EML_WORKERS is set to a comma delimited list of your miner's worker names</li>
