@@ -14,9 +14,15 @@ Ensure:
       
 # PostgreSQL
 A purpose-created user should have been created using the statement (change username and password respectively with your own selection):<br>
-        CREATE USER username WITH ENCRYPTED PASSWORD 'password';<br>
+    CREATE USER username WITH ENCRYPTED PASSWORD 'password' SUPERUSER;<br>
 <username> and <password> are stored in environment variables EML_USER and EML_PW respectively.
     
     
-The server can be initialised with:<br>
-   $ sudo service postgresql start
+If it is not already running, the server can be initialised with:<br>
+    $ sudo service postgresql start
+
+PSQL can be logged into with:<br>
+    $ sudo -u postgres psql
+
+# Python
+Using an appropriate virtual environment

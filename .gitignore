@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Local PostgreSQL database
+db/
+
+# Config file (helper)
+.config.sh
