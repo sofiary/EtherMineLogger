@@ -11,4 +11,6 @@ Ensure:
     <li>the virtual environment requirements in requirements.txt have been installed</li>
     <li>your environment variable EML_MINER is set to your miner wallet (excluding the 0x prefix)</li>
     <li>your environment variable EML_WORKERS is set to a comma delimited list of your miner's worker names</li>
+    <li>psycopg2 <a href="https://www.psycopg.org/install/">pre-requisites</a> have been installed</li>
 </ul>
+      
