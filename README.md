@@ -13,6 +13,6 @@ Ensure:
 </ul>
       
 # PostgreSQL
-A purpose-created user should have been created using the statement (obviously change out username and password respectively with your own selection):<br>
+A purpose-created user should have been created using the statement (change username and password respectively with your own selection):<br>
         CREATE USER username WITH ENCRYPTED PASSWORD 'password';<br>
 <username> and <password> are stored in environment variables EML_USER and EML_PW respectively.
