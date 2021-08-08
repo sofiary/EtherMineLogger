@@ -3,12 +3,13 @@
 import json
 import os
 import psycopg2
+from threading import Thread, Event
 from typing import Union
-import urllib
+import urllib.request
 
 # Constant definitions
 
-API_ENDPOINT = r"https://api.ethermine.org/"
+API_ENDPOINT = r"https://api.ethermine.org"
 MINER = os.environ.get('EML_MINER')
 WORKERS = list(os.environ.get('EML_WORKERS').split(','))
 # Database defaults. User can change as required.
@@ -30,20 +31,39 @@ def connect_pg(*, dbname: str, user: str, password: str, host: str, port: int,
 
     return conn, cur
 
-def get_worker_data(*, api: str, miner: str, workers: list) -> list:
+#class PeriodicChecker(Thread):
+def get_workers_data(*, api: str, miner: str, workers: list, timeout: int) -> list:
     '''Returns raw JSON information on workers' statistics'''
     # Use Mozilla header to prevent the 403 Forbidden error blocking urllib
     headers = {'User-Agent': 'Mozilla/5.0'}
     worker_data = {}
     for worker in workers:
-        request = urllib.request.Request(f"{api}/miner/{miner}/worker/{worker}"
-                                         f"/history", headers=headers)
-        with urllib.request.urlopen(request, timeout=15) as response:
+        api_url = f"{api}/miner/:{miner}/worker/{worker}/history"
+        request = urllib.request.Request(url=api_url, headers=headers)
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             worker_data[worker] = json.loads(response.read())
-    
+
     return worker_data
-    
+
+def store_workers_data(*, workers: list, cur: psycopg2.extensions.cursor) -> None:
+    '''Adds new worker data to the database.'''
+
 if __name__=="__main__":
+    # Initial setup of database tables
     conn, cur = connect_pg(dbname=PG_DB, user=PG_USER, password=PG_PW,
                            host=PG_HOST, port=PG_PORT)
-    cur.execute("CREATE TABLE IF NOT EXISTS test (); COMMIT")
+    _ = [cur.execute(f"CREATE TABLE IF NOT EXISTS {worker} ("
+                      "epoch BIGINT NOT NULL PRIMARY KEY,"
+                      "time TIMESTAMP NOT NULL,"
+                      "reportedHashrate NUMERIC(4) NOT NULL,"
+                      "currentHashrate NUMERIC(4) NOT NULL,"
+                      "validShares INT NOT NULL,"
+                      "invalidShares INT NOT NULL,"
+                      "staleShares INT NOT NULL,"
+                      "averageHashrate NUMERIC(4) NOT NULL); COMMIT") 
+         for worker in WORKERS]
+
+    get_workers_data(api=API_ENDPOINT, miner=MINER, workers=WORKERS, timeout=15)
+    # Creation of looping thread object
+
+    # To do Postgres TO_TIMESTAMP(time) integration
