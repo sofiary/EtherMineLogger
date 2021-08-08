@@ -5,6 +5,7 @@ A simple Python helper to store EtherMine miner data into a persistent PostgreSQ
 Ensure:
 <ul>
     <li>the installation instructions on the <a href="https://www.postgresql.org/">PostgreSQL<a> website have been followed, and the server/client are ready for your machine</li>
+    <li>an appropriate virtual environment has been established</li>
     <li>the virtual environment requirements in requirements.txt have been installed</li>
     <li>your environment variable EML_MINER is set to your miner wallet (excluding the 0x prefix)</li>
     <li>your environment variable EML_WORKERS is set to a comma delimited list of your miner's worker names</li>
