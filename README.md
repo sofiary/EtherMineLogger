@@ -11,3 +11,7 @@ Ensure:
     <li>psycopg2 <a href="https://www.psycopg.org/install/">pre-requisites</a> have been installed</li>
 </ul>
       
+# PostgreSQL
+A purpose-created user should have been created using the statement:<br>
+        CREATE USER <username> WITH ENCRYPTED PASSWORD '<password>'<br>
+<username> and <password> are stored in environment variables EML_USER and EML_PW respectively.
