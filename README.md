@@ -18,5 +18,5 @@ A purpose-created user should have been created using the statement (change user
 <username> and <password> are stored in environment variables EML_USER and EML_PW respectively.
     
     
-The server can be initialised with:
+The server can be initialised with:<br>
    $ sudo service postgresql start
