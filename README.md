@@ -5,7 +5,7 @@ This preparatory README has been developed for an Ubuntu 20.04LTS installation.
 # General Preparation
 Ensure:
 <ul>
-    <li>the installation instructions on the <a href="https://www.postgresql.org/">PostgreSQL<a> website have been followed, and the server/client are ready for your machine</li>
+    <li>your machine has PostgreSQL installed</li>
     <li>the installed Python version is >= 3.6</li>
     <li>a Python virtual environment has been established in the project folder as venv</li>
     <li>the virtual environment requirements in requirements.txt have been installed</li>
