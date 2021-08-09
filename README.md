@@ -1,5 +1,5 @@
 # EtherMineLogger
-A simple Python helper to store EtherMine miner data into a persistent PostgreSQL database.
+A simple Python helper to store EtherMine miner data into a persistent PostgreSQL database.<br>
 This preparatory README has been developed for an Ubuntu 20.04LTS installation.
 
 # General Preparation
