@@ -24,7 +24,7 @@ EML_PARAMS = {
     'api_data': API_DATA,
     'miner': os.environ.get('EML_MINER'),
     'workers': os.environ.get('EML_WORKERS').split(','),
-    'delay': 600
+    'delay': 6
 }
   
 class EtherMineLogger(Thread):
@@ -108,7 +108,7 @@ class EtherMineLogger(Thread):
                                     f"{','.join(data_remaining)}) VALUES ("
                                     f"{entry[data_time]},"
                                     f"TO_TIMESTAMP({str(entry[data_time])}),"
-                                    f"{','.join([str(x) for x in entry.values()][1:])}"
+                                    f"{','.join([str(entry[item]) for item in data_remaining])}"
                                     f") ON CONFLICT DO NOTHING; COMMIT")
                     self.cur.execute(sql_statement)
 
@@ -127,5 +127,4 @@ if __name__=="__main__":
     halter = Event()
     eml = EtherMineLogger(**EML_PARAMS, event=halter)
     eml.connect_pg(**PG_PARAMS, password=getpass())
-    breakpoint()
     eml.start()
