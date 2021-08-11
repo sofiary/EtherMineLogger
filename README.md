@@ -17,10 +17,8 @@ Ensure:
 # PostgreSQL
 A purpose-created user should have been created using the statement (change username and password respectively with your own selection):<br>
     CREATE USER username WITH ENCRYPTED PASSWORD 'password' SUPERUSER;<br>
-<username> and <password> need to be stored in environment variables EML_USER and EML_PW respectively.
-
-This can be done by updating your ~/.bashrc file with a terminal editor such as vim/nano, and reloading the environment with:<br>
-    $ source ~/.bashrc
+<username> is assumed by default to be emluser, but can be changed.
+If it is changed, the entry for 'user' in the logger.py file's PG_PARAMS dictionary must be updated. 
     
 If it is not already running, the Postgres server can be initialised with:<br>
     $ sudo service postgresql start
@@ -30,9 +28,10 @@ PSQL can be logged into with:<br>
 
 Establish a new database in PSQL with:<br>
     CREATE DATABASE emldb;
+If you choose a different database name, the entry for 'dbname' in the logger.py file's PG_PARAMS dictionary must be updated.
     
 # Execution
-Navigate to the working directory of the cloned EtherMineLogger repository and execute the script with:<br>
+Navigate to the working directory of the cloned EtherMineLogger repository and execute the start-up script:<br>
     $ source .config.sh
 
 This will initiate the necessary virtual environment and execute the python script (assuming python3 is the python PATH variable).

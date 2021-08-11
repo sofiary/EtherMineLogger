@@ -1,24 +1,31 @@
 #!/usr/bin/env python3
 
+from getpass import getpass
 import json
 import os
 import psycopg2
+import sys
 from threading import Thread, Event
 import urllib.request
 
-# Constant definitions
-
-API_ENDPOINT = r"https://api.ethermine.org"
+# Database defaults. User can change as required.
+PG_PARAMS = {
+    'dbname': 'emldb',
+    'user': 'emluser',
+    'host': 'localhost',
+    'port': 5432,
+    'timeout': 2
+}
+# Logger defaults. User can change as required.
 API_DATA = ['time', 'reportedHashrate', 'currentHashrate', 'validShares',
             'invalidShares', 'staleShares', 'averageHashrate']
-MINER = os.environ.get('EML_MINER')
-WORKERS = list(os.environ.get('EML_WORKERS').split(','))
-# Database defaults. User can change as required.
-PG_DB = 'emldb'
-PG_USER = os.environ.get('PG_USER')
-PG_PW = os.environ.get('PG_PW')
-PG_HOST = 'localhost'
-PG_PORT = 5433
+EML_PARAMS = {
+    'api': r"https://api.ethermine.org",
+    'api_data': API_DATA,
+    'miner': os.environ.get('EML_MINER'),
+    'workers': os.environ.get('EML_WORKERS').split(','),
+    'delay': 600
+}
   
 class EtherMineLogger(Thread):
     
@@ -34,29 +41,35 @@ class EtherMineLogger(Thread):
         self.delay = delay # Delay between API calls
         self.conn = None
         self.cur = None
-
-    def __repr__(self) -> str:
-        pass
     
     def run(self, *, timeout=15, **kw):
         '''Overrides the parent Class method to periodically poll the
         EtherMine API and store new data into the persistent db.'''
-        self.create_workers_tables()
+        self._create_workers_tables()
         while not self.stopped.wait(self.delay):
             self._get_workers_data(timeout=timeout)
             self._store_workers_data()
 
     def connect_pg(self, *, dbname: str, user: str, password: str, host: str, 
-                   port: int, **kw) -> None:
+                   port: int, timeout: int, **kw) -> None:
         '''Connects to selected PostgreSQL db and sets the internal db 
         connection and cursor objects.
         '''
-        self.conn = psycopg2.connect(f"dbname={dbname} user={user} "
-                                     f"password={password} host={host} "
-                                     f"port={port}")
-        self.cur = self.conn.cursor()
+        try:
+            self.conn = psycopg2.connect(f"dbname={dbname} user={user} "
+                                         f"password={password} host={host} "
+                                         f"port={port} connect_timeout={timeout}")
+        except psycopg2.OperationalError as e:
+            # The error periodically repeats itself twice, this trims the error message
+            print(str(e).split('\n')[0])
+            sys.exit()
+        else:
+            self.cur = self.conn.cursor()
 
-    def create_workers_tables(self, *args, **kw) -> None:
+    def _create_workers_tables(self, *args, **kw) -> None:
+        '''Establishes necessary PostgreSQL db tables for each worker,
+        only if they don't exist already.
+        '''
         for worker in self.workers:
             self.cur.execute(f"CREATE TABLE IF NOT EXISTS {worker} ("
                             f"epoch BIGINT NOT NULL PRIMARY KEY,"
@@ -74,6 +87,8 @@ class EtherMineLogger(Thread):
         headers = {'User-Agent': 'Mozilla/5.0'}
         self.workers_data = {}
         for worker in self.workers:
+            # Perform an EtherMine API call to retrieve each worker's stats
+            # and amalgamate the raw JSON information into a dictionary
             api_url = f"{self.api}/miner/:{self.miner}/worker/{worker}/history"
             request = urllib.request.Request(url=api_url, headers=headers)
             with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -82,14 +97,17 @@ class EtherMineLogger(Thread):
     def _store_workers_data(self, *args, **kw) -> None:
         '''Adds worker data to the PostgreSQL database.'''
         for worker in self.workers_data.keys():
+            # Decode workers' JSON information and update each worker's respective
+            # table with the most recent mining stats.
             worker_stats = self._disassemble_json(worker=worker)
             if worker_stats is not None:
                 for entry in worker_stats:
+                    data_time, *data_remaining = self.api_data
                     sql_statement = (f"INSERT INTO {worker} ("
-                                    f"epoch,{self.api_data[0]},"
-                                    f"{','.join(self.api_data[1:])}) VALUES ("
-                                    f"{entry[self.api_data[0]]},"
-                                    f"TO_TIMESTAMP({str(entry[self.api_data[0]])}),"
+                                    f"epoch,{data_time},"
+                                    f"{','.join(data_remaining)}) VALUES ("
+                                    f"{entry[data_time]},"
+                                    f"TO_TIMESTAMP({str(entry[data_time])}),"
                                     f"{','.join([str(x) for x in entry.values()][1:])}"
                                     f") ON CONFLICT DO NOTHING; COMMIT")
                     self.cur.execute(sql_statement)
@@ -107,8 +125,7 @@ class EtherMineLogger(Thread):
 
 if __name__=="__main__":
     halter = Event()
-    eml = EtherMineLogger(event=halter, api=API_ENDPOINT, api_data=API_DATA,
-                          miner=MINER, workers=WORKERS, delay=600)
-    eml.connect_pg(dbname=PG_DB, user=PG_USER, password=PG_PW,
-                   host=PG_HOST, port=PG_PORT)
+    eml = EtherMineLogger(**EML_PARAMS, event=halter)
+    eml.connect_pg(**PG_PARAMS, password=getpass())
+    breakpoint()
     eml.start()
