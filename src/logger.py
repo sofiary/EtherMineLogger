@@ -24,7 +24,7 @@ EML_PARAMS = {
     'api_data': API_DATA,
     'miner': os.environ.get('EML_MINER'),
     'workers': os.environ.get('EML_WORKERS').split(','),
-    'delay': 6
+    'delay': 600
 }
   
 class EtherMineLogger(Thread):
