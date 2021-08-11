@@ -14,7 +14,7 @@ PG_PARAMS = {
     'user': 'emluser',
     'host': 'localhost',
     'port': 5432,
-    'timeout': 2
+    'timeout': 2 # seconds
 }
 # Logger defaults. User can change as required.
 API_DATA = ['time', 'reportedHashrate', 'currentHashrate', 'validShares',
@@ -24,7 +24,7 @@ EML_PARAMS = {
     'api_data': API_DATA,
     'miner': os.environ.get('EML_MINER'),
     'workers': os.environ.get('EML_WORKERS').split(','),
-    'delay': 600
+    'delay': 600 # seconds
 }
   
 class EtherMineLogger(Thread):
