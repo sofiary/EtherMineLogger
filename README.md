@@ -30,8 +30,11 @@ Establish a new database in PSQL with:<br>
     CREATE DATABASE emldb;
 If you choose a different database name, the entry for 'dbname' in the logger.py file's PG_PARAMS dictionary must be updated.
     
-# Execution
-Navigate to the working directory of the cloned EtherMineLogger repository and execute the start-up script:<br>
-    $ source .config.sh
+# Automatic Execution
+From the EtherMineLogger repo cloned directory, execute the start-up script:<br>
+    $ source .eml.sh
 
-This will initiate the necessary virtual environment and execute the python script (assuming python3 is the python PATH variable).
+This will:
+- initiate the necessary virtual environment;
+- start the Postgres server; and
+- execute the python script (assuming python3 is the python PATH variable).
