@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
 from getpass import getpass
 import json
 import os
@@ -41,6 +42,7 @@ class EtherMineLogger(Thread):
         self.delay = delay # Delay between API calls
         self.conn = None
         self.cur = None
+        self.db = None
     
     def run(self, *, timeout=15, **kw):
         '''Overrides the parent Class method to periodically poll the
@@ -96,21 +98,66 @@ class EtherMineLogger(Thread):
 
     def _store_workers_data(self, *args, **kw) -> None:
         '''Adds worker data to the PostgreSQL database.'''
+
+        # Since EtherMine data only goes back 24h in 10m segments,
+        # return only (24h*60m/10m) = 144 entries
+        data_limit = 144
+
+        def tuple_splitter(tuplelist: list) -> list:
+            return [x[0] for x in tuplelist]
+
         for worker in self.workers_data.keys():
             # Decode workers' JSON information and update each worker's respective
             # table with the most recent mining stats.
             worker_stats = self._disassemble_json(worker=worker)
+            
             if worker_stats is not None:
+                # Retrieve existing db data
+                self.cur.execute(f"SELECT DISTINCT epoch FROM {worker} "
+                                 f"ORDER BY epoch DESC LIMIT {data_limit};")
+                retmsg = self.cur.statusmessage
+                statusfirst, *_, statuslast = retmsg.split(" ")
+                try:
+                    # Check if all the necessary data was retrieved
+                    if statusfirst == "SELECT" and (rowsize := int(statuslast)) < data_limit:
+                        # Define the number of scroll operations required
+                        numscrolls = data_limit // rowsize
+                        existing_db_data = tuple_splitter(self.cur.fetchall())
+                        for i in range(numscrolls):
+                            try:
+                                self.cur.scroll(-1*rowsize)
+                                existing_db_data += tuple_splitter(self.cur.fetchall())
+                            except psycopg2.ProgrammingError as e:
+                                # No more data left to scroll through
+                                break
+                    else:
+                        existing_db_data = tuple_splitter(self.cur.fetchall())
+                except ValueError as e:
+                    print(f"Unexpected value returned from database call.")
+                    print(f"Expected: 'SELECT <num>'")
+                    print(f"Received: '{retmsg}'")
+
                 for entry in worker_stats:
-                    data_time, *data_remaining = self.api_data
+                    col_time, *col_remaining = self.api_data
+
+                    if (epoch := entry[col_time]) in existing_db_data:
+                        continue
+                    else:
+                        entry_time = datetime.fromtimestamp(epoch).strftime("%d-%m-%Y %H-%M-%S")
+                        print(f"Adding epoch {epoch} at date/time "
+                              f"{entry_time} to database.")
+
                     sql_statement = (f"INSERT INTO {worker} ("
-                                    f"epoch,{data_time},"
-                                    f"{','.join(data_remaining)}) VALUES ("
-                                    f"{entry[data_time]},"
-                                    f"TO_TIMESTAMP({str(entry[data_time])}),"
-                                    f"{','.join([str(entry[item]) for item in data_remaining])}"
+                                    f"epoch,{col_time},"
+                                    f"{','.join(col_remaining)}) VALUES ("
+                                    f"{entry[col_time]},"
+                                    f"TO_TIMESTAMP({str(entry[col_time])}),"
+                                    f"{','.join([str(entry[item]) for item in col_remaining])}"
                                     f") ON CONFLICT DO NOTHING; COMMIT")
                     self.cur.execute(sql_statement)
+            else:
+                time_now = datetime.now().strftime("%d-%M-%Y %H:%M%:S")
+                print(f"Failed to retrieve worker '{worker}' stats at {time_now}.")
 
     def _disassemble_json(self, *, worker: str, **kw):
         '''Disassembles the EtherMine API JSON schema to retrieve worker

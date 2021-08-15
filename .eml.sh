@@ -4,4 +4,4 @@
 
 source ./venv/bin/activate
 sudo service postgresql start
-python3 src/logger.py
+python3 ./src/logger.py
